@@ -1,26 +1,52 @@
-# LDA
-library(ggsci)
-library(ggthemes)
-mydata<-read.csv("C:/Users/lyh/Desktop/Rdata/data11.csv",header = TRUE,sep =",")
-mydata
-library(ggplot2)
-mydata$group = factor(mydata$group, levels=c("81~100","61~80","41~60","21~40","<20"))
-mydata$Rank = factor(mydata$Rank, levels=c("3 WEEK","6 WEEK","12 WEEK","18 WEEK","24 WEEK"))
-A<-ggplot(mydata,aes(x=Rank,y=ratio,fill=group))+
-  geom_bar(stat="identity",position="stack", width = 0.5)+
-  labs(y="Proportion (%)",x="",fill="(%)")+
-  scale_fill_npg()+
-  theme(title=element_text(size=15,face= "bold"),
-        axis.title.y=element_text(size=12,face= "bold"),
-        axis.text.x=element_text(size = 10,face = "bold"),
-        axis.title.x =element_text(size=12,face= "plain"),
-        axis.text.y=element_text(size =10 ,face = "bold"),
-        legend.text=element_text(size=12),
-        legend.title=element_text(size=12),
-        legend.position="right",
-        panel.background = element_rect(fill = "transparent",colour = NA),
-        axis.line=element_line(size = 1,color="black"))+
-  scale_y_continuous(breaks = seq(0,100,by=20))+
-  geom_text(aes(x=Rank,y=label_y,label=RT),
-            position='identity', color='black')
-A
+# 简单爬虫
+# 根据xpath获取节点内容：
+
+getNodesTxt <- function(html_txt1,xpath_p){
+
+  els1 = getNodeSet(html_txt1, xpath_p)
+
+  # 获得Node的内容，并且去除空字符：
+
+  els1_txt <- sapply(els1,xmlValue)[!(sapply(els1,xmlValue)=="")]
+
+  # 去除\n：
+
+  str_replace_all(els1_txt,"(\\n )+","")
+
+}
+
+
+
+# 处理节点格式，为character且长度为0的赋值为NA：
+
+dealNodeTxt <- function(NodeTxt){
+
+  ifelse(is.character(NodeTxt)==T && length(NodeTxt)!=0 , NodeTxt , NA)
+
+}
+
+
+
+for(i in 1:nrow(mydata)){
+
+  # 获得网址：
+
+  doc <- getURL(mydata[i,"url"])
+
+  cat("成功获得网页!\t")
+
+  # 获得网页内容
+
+  html_txt1 = htmlParse(doc, asText = TRUE)
+
+  # 获得Full Name:
+
+  mydata[i,"name"] <- dealNodeTxt(getNodesTxt(html_txt1,'Xpath'))
+
+  cat("写入名称!\t")
+
+  print(paste("完成第",i,"个了！"))
+
+}
+
+write.csv(mydata,"mydata.csv")
